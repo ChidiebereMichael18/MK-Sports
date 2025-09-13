@@ -4,12 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from functools import lru_cache
 from datetime import date
 import uvicorn
-import json
 
 # Import the scraping functions
 from scraper_scores import scrape_scores_all
 from scraper_predictions import scrape_predictions_all
-from scraper_fixtures import scrape_fixtures_all  # New import
+from scraper_fixtures import scrape_fixtures_all
 
 app = FastAPI()
 
@@ -24,25 +23,34 @@ app.add_middleware(
 
 @app.get("/")
 def home():
-    return {"message": "Sports API - Scores, Predictions & Fixtures. Date: 2025-09-13"}
+    return {"message": "Sports API - Scores, Predictions & Fixtures"}
 
 @lru_cache(maxsize=1)
 def cached_scores_all(date_str: str = None):
     return scrape_scores_all(date_str)
 
 @app.get("/scores")
-def get_all_scores(date_param: str = Query(None, alias="date")):
-    today = date_param or date.today().isoformat()
+def get_all_scores(date: str = Query(None)):
+    today = date or date.today().isoformat()
     data = cached_scores_all(today)
     if not data:
         return JSONResponse(status_code=404, content={"error": f"No scores for {today}"})
     return sorted(data, key=lambda x: (x.get("sport", ""), x.get("date", "")))
 
 @app.get("/scores/{sport}")
-def get_scores(sport: str, date_param: str = Query(None, alias="date")):
-    today = date_param or date.today().isoformat()
+def get_scores(sport: str, date: str = Query(None)):
+    today = date or date.today().isoformat()
     data = cached_scores_all(today)
-    filtered = [m for m in data if m.get("sport", "").lower() == sport.lower()]
+    # Convert sport parameter to proper case for matching
+    sport_map = {
+        "soccer": "Soccer",
+        "mlb": "MLB", 
+        "nhl": "NHL",
+        "nba": "NBA",
+        "nfl": "NFL"
+    }
+    sport_name = sport_map.get(sport.lower(), sport)
+    filtered = [m for m in data if m.get("sport", "").lower() == sport_name.lower()]
     if not filtered:
         return JSONResponse(status_code=404, content={"error": f"No {sport} scores for {today} (check season)"})
     return filtered
@@ -61,7 +69,16 @@ def get_all_predictions():
 @app.get("/predictions/{sport}")
 def get_predictions(sport: str):
     data = cached_predictions_all()
-    filtered = [p for p in data if p.get("sport", "").lower() == sport.lower()]
+    # Convert sport parameter to proper case for matching
+    sport_map = {
+        "soccer": "Soccer",
+        "mlb": "MLB", 
+        "nhl": "NHL",
+        "nba": "NBA",
+        "nfl": "NFL"
+    }
+    sport_name = sport_map.get(sport.lower(), sport)
+    filtered = [p for p in data if p.get("sport", "").lower() == sport_name.lower()]
     if not filtered:
         return JSONResponse(status_code=404, content={"error": f"No predictions for {sport}"})
     return filtered
@@ -74,7 +91,7 @@ def get_soccer_predictions(league: str):
         return JSONResponse(status_code=404, content={"error": f"No {league} predictions"})
     return filtered
 
-# New fixtures endpoints
+# Fixtures endpoints
 @lru_cache(maxsize=1)
 def cached_fixtures_all(days_ahead: int = 7):
     return scrape_fixtures_all(days_ahead)
@@ -92,7 +109,16 @@ def get_fixtures(sport: str, days_ahead: int = Query(7, ge=1, le=30)):
     if not data:
         return JSONResponse(status_code=404, content={"error": f"No fixtures found for next {days_ahead} days"})
     
-    filtered = [m for m in data if m.get("sport", "").lower() == sport.lower()]
+    # Convert sport parameter to proper case for matching
+    sport_map = {
+        "soccer": "Soccer",
+        "mlb": "MLB", 
+        "nhl": "NHL",
+        "nba": "NBA",
+        "nfl": "NFL"
+    }
+    sport_name = sport_map.get(sport.lower(), sport)
+    filtered = [m for m in data if m.get("sport", "").lower() == sport_name.lower()]
     if not filtered:
         return JSONResponse(status_code=404, content={"error": f"No {sport} fixtures for next {days_ahead} days"})
     return filtered

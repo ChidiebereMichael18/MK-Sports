@@ -1,27 +1,23 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
 });
 
 export const metadata = {
   title: "MKSports",
-  description: "",
+  description: "sports for everyone",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${plusJakarta.variable} font-sans antialiased`} style={{
+          fontFamily:
+            "'Plus Jakarta Sans', var(--font-plus-jakarta), sans-serif",
+        }}>
         {children}
       </body>
     </html>
